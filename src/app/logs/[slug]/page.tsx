@@ -20,7 +20,8 @@
 
 import { notFound } from 'next/navigation'
 import { allLogs } from '@contentlayer/generated'
-import { format, parseISO } from 'date-fns'
+import { parseISO } from 'date-fns'
+import { formatInTimeZone } from 'date-fns-tz'
 import { MDXContent } from '@/components/mdx/MDXContent'
 
 interface PageProps {
@@ -42,7 +43,7 @@ export default async function LogPage({ params }: PageProps) {
             <h1>{log.title}</h1>
             <div className="mb-8 text-gray-500">
                 <time dateTime={log.date}>
-                    {format(parseISO(log.date), 'MMMM d, yyyy')}
+                    {formatInTimeZone(parseISO(log.date), 'UTC', 'MMMM d, yyyy')}
                 </time>
             </div>
             <MDXContent code={log.body.code} />

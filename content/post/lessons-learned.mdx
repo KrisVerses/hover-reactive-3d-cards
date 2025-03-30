@@ -150,3 +150,46 @@ description: "Key insights and learnings from implementing 3D card hover effects
 - [Framer Motion Documentation](https://www.framer.com/motion/)
 - [CSS Transform Guide](https://developer.mozilla.org/en-US/docs/Web/CSS/transform)
 - [React Performance Optimization](https://reactjs.org/docs/optimizing-performance.html)
+
+## 3D Card Component Implementation
+
+### CSS Perspective and Transform Styles
+When implementing 3D effects in React components, particularly with Framer Motion, there are important considerations for CSS properties:
+
+1. **Perspective Property**
+   - The `perspective` property must be applied to a parent container
+   - Using Tailwind's `perspective-{value}` utilities may not work as expected
+   - Instead, use inline styles: `style={{ perspective: "1000px" }}`
+   - The value (e.g., 1000px) determines the intensity of the 3D effect
+     - Smaller values create more dramatic effects
+     - Larger values create subtler effects
+
+2. **Transform Style**
+   - The `transform-style: preserve-3d` property is crucial for maintaining 3D space
+   - Like perspective, it's more reliable when applied via inline styles
+   - Must be applied to the element that receives the 3D transforms
+   - Works in conjunction with perspective to create the full 3D effect
+
+3. **Component Structure**
+   - Use a three-layer structure for optimal 3D effects:
+     1. Outer container: Provides perspective
+     2. Middle container: Handles 3D transforms
+     3. Inner container: Contains the actual content
+
+4. **Framer Motion Integration**
+   - Use `motion.div` for smooth 3D animations
+   - Configure spring animations for natural movement:
+     ```typescript
+     transition={{
+       type: "spring",
+       stiffness: 300,  // Controls responsiveness
+       damping: 20,     // Controls settling speed
+     }}
+     ```
+
+### Best Practices
+- Prefer inline styles over Tailwind utilities for 3D-specific properties
+- Keep perspective and transform-style properties separate from other styling concerns
+- Test different perspective values to find the right balance for your design
+- Consider performance implications when using 3D transforms
+- Use TypeScript interfaces to define clear prop types for reusable components

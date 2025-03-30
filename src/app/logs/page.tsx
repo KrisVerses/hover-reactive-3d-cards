@@ -4,7 +4,8 @@
 // - Import date formatting utilities
 import Link from "next/link";
 import { allLogs } from "@contentlayer/generated";
-import { parseISO, format } from "date-fns";
+import { parseISO } from "date-fns";
+import { formatInTimeZone } from "date-fns-tz";
 
 // Step 2: Create a sort function for logs
 // - Place outside component to prevent recreation on each render
@@ -38,7 +39,7 @@ const LogsPage = () => {
                                         {log.title}
                                     </h2>
                                     <time className="text-sm text-gray-500">
-                                        {format(parseISO(log.date), "MMM d, yyyy")}
+                                        {formatInTimeZone(parseISO(log.date), 'UTC', "MMM d, yyyy")}
                                     </time>
                                 </div>
                                 <p className="text-gray-600 leading-relaxed">
