@@ -7,8 +7,9 @@
 //   - We'll use it for smooth 3D rotations
 'use client'
 
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect } from 'react';
+import { motion, useScroll, useTransform } from 'framer-motion';
+import { useRef } from 'react';
 
 // Step 2: Define Types
 // - Create a CardProps interface
@@ -16,18 +17,22 @@ import { motion } from 'framer-motion';
 //   - title: string for the card's heading
 //   - description: string for the card's text
 //   - imageUrl: optional string for card image
+//   - variant: optional string for card variant
+//   - icon: optional React node for card icon
 interface CardProps {
     title: string;
     description: string;
     imageUrl?: string;
+    variant?: 'default' | 'accent' | 'dark';
+    icon?: React.ReactNode;
 }
 
 // Step 3: Create Card Component
 // - Define the component using React.FC (Function Component)
 //   - FC is TypeScript's way of typing React components
 //   - Pass in our CardProps interface
-//   - Destructure props to get title, description, and imageUrl
-const Card: React.FC<CardProps> = ({ title, description, imageUrl }) => {
+//   - Destructure props to get title, description, imageUrl, variant, and icon
+const Card: React.FC<CardProps> = ({ title, description, imageUrl, variant = 'default', icon }) => {
     // Step 4: Mouse Position Tracking
     // - Use useState to create mousePosition state
     //   - Initialize with { x: 0, y: 0 }
@@ -39,17 +44,71 @@ const Card: React.FC<CardProps> = ({ title, description, imageUrl }) => {
         mouseY: 0
     });
 
-    // Step 5: Mouse Event Handlers
+    // Step 5: Scroll Animation Setup
+    // - useRef creates a reference to the card's DOM element
+    //   - This allows us to track the card's position in the viewport
+    //   - The ref is attached to the outer container div
+    const cardRef = useRef<HTMLDivElement>(null);
+
+    // - useScroll hook from Framer Motion tracks scroll progress
+    //   - target: cardRef tells it which element to track
+    //   - offset: ["start end", "end start"] defines when to start/end tracking
+    //     - "start end": starts when card's top reaches viewport bottom
+    //     - "end start": ends when card's bottom reaches viewport top
+    //   - scrollYProgress returns a value from 0 to 1
+    //     - 0: card not yet in view
+    //     - 1: card fully scrolled into view
+    const { scrollYProgress } = useScroll({
+        target: cardRef,
+        offset: ["start end", "end start"]
+    });
+
+    // Variant-specific configurations
+    const variantConfigs = {
+        default: {
+            stiffness: 300,
+            damping: 20,
+            bgColor: 'bg-red-500',
+            shadowColor: 'rgba(0, 0, 0, 0.2)'
+        },
+        accent: {
+            stiffness: 400,
+            damping: 15,
+            bgColor: 'bg-blue-500',
+            shadowColor: 'rgba(0, 0, 0, 0.3)'
+        },
+        dark: {
+            stiffness: 250,
+            damping: 25,
+            bgColor: 'bg-gray-800',
+            shadowColor: 'rgba(0, 0, 0, 0.4)'
+        }
+    };
+
+    const config = variantConfigs[variant];
+
+    // Step 6: Mouse Event Handlers
+    // This function handles the 3D rotation when mouse moves over the card
     const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+        // Get card's position and size in the viewport
         const cardPosition = e.currentTarget.getBoundingClientRect();
-        const mouseX = e.clientX - cardPosition.left;
-        const mouseY = e.clientY - cardPosition.top;
+
+        // Calculate mouse position relative to card's top-left corner
+        const mouseX = e.clientX - cardPosition.left;  // Distance from left edge of card
+        const mouseY = e.clientY - cardPosition.top;   // Distance from top edge of card
 
         // Calculate rotation angles (max 10 degrees)
+        // For X rotation (up/down):
+        // - Subtract half height to center around middle
+        // - Divide by height to get -0.5 to 0.5
+        // - Multiply by 10 for final angle
         const rotateX = ((mouseY - cardPosition.height / 2) / cardPosition.height) * 10;
+
+        // For Y rotation (left/right):
+        // - Same calculation but using width
         const rotateY = ((mouseX - cardPosition.width / 2) / cardPosition.width) * 10;
 
-        // Update state with both rotation angles and mouse coordinates
+        // Update state with new rotation angles
         setMousePosition({
             x: rotateX,
             y: rotateY,
@@ -69,6 +128,7 @@ const Card: React.FC<CardProps> = ({ title, description, imageUrl }) => {
         // - Sets fixed dimensions
         // - Acts as the 3D space container
         <div
+            ref={cardRef}
             className="relative w-[400px] h-[400px]"
             style={{ perspective: "1000px" }}
         >
@@ -83,13 +143,17 @@ const Card: React.FC<CardProps> = ({ title, description, imageUrl }) => {
                 animate={{
                     rotateX: mousePosition.x,
                     rotateY: mousePosition.y,
-                    // Add dynamic shadow based on rotation
-                    boxShadow: `${mousePosition.y / 10}px ${mousePosition.x / 10}px 20px rgba(0, 0, 0, 0.2)`,
+                    // Shadow calculation:
+                    // - mousePosition.y/10: shadow moves up/down based on mouse
+                    // - mousePosition.x/10: shadow moves left/right based on mouse
+                    // - 20px: shadow blur amount
+                    // - config.shadowColor: shadow color from variant config
+                    boxShadow: `${mousePosition.y / 10}px ${mousePosition.x / 10}px 20px ${config.shadowColor}`,
                 }}
                 transition={{
                     type: "spring",
-                    stiffness: 300,  // Controls how responsive the rotation is
-                    damping: 20,      // Controls how quickly rotation settles
+                    stiffness: config.stiffness,
+                    damping: config.damping,
                 }}
                 style={{
                     transformStyle: "preserve-3d"
@@ -99,7 +163,7 @@ const Card: React.FC<CardProps> = ({ title, description, imageUrl }) => {
                 {/* - Contains the actual card content */}
                 {/* - Applies background and border styles */}
                 {/* - Handles content layout */}
-                <div className="relative w-full h-full bg-red-500 p-8 border border-gray-200 rounded-2xl">
+                <div className={`relative w-full h-full ${config.bgColor} p-8 border border-gray-200 rounded-2xl`}>
                     {/* Cursor-following lighting effect */}
                     {/* This creates a spotlight effect that follows the mouse cursor */}
                     {/* - absolute positioning ensures it covers the entire card */}
@@ -134,18 +198,44 @@ const Card: React.FC<CardProps> = ({ title, description, imageUrl }) => {
                         }}
                     />
 
-                    {/* Card Content */}
-                    <div className="relative z-10 flex flex-col items-center justify-center h-full">
-                        {/* Optional: Add entrance animation */}
+                    {/* Floating Icon with Parallax Effect */}
+                    {icon && (
                         <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.5 }}
+                            className="absolute top-4 right-4 w-12 h-12"
+                            animate={{
+                                y: mousePosition.x * 2, // Parallax movement
+                                rotateZ: mousePosition.y * 2,
+                            }}
+                            transition={{
+                                type: "spring",
+                                stiffness: 200,
+                                damping: 15,
+                            }}
+                            style={{
+                                zIndex: 20,
+                            }}
                         >
-                            <h2 className="text-2xl font-bold mb-4 text-white">{title}</h2>
-                            <p className="text-gray-600 text-white">{description}</p>
+                            {icon}
                         </motion.div>
-                    </div>
+                    )}
+
+                    {/* Card Content with Scroll Animation */}
+                    <motion.div
+                        className="relative z-10 flex flex-col items-center justify-center h-full"
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{
+                            opacity: 1,
+                            y: 0,
+                            transition: {
+                                duration: 0.5,
+                                delay: scrollYProgress.get() * 0.5 // Stagger based on scroll position
+                            }
+                        }}
+                        viewport={{ once: true }}
+                    >
+                        <h2 className="text-2xl font-bold mb-4 text-white">{title}</h2>
+                        <p className="text-white">{description}</p>
+                    </motion.div>
                 </div>
             </motion.div>
         </div>
