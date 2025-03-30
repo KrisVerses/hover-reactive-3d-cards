@@ -1,0 +1,152 @@
+---
+title: "Lessons Learned: Building Interactive 3D Cards"
+date: "2024-03-20"
+description: "Key insights and learnings from implementing 3D card hover effects, including performance optimization techniques and best practices for interactive animations."
+---
+
+# Lessons Learned
+
+## Motion Design Principles
+
+1. **Natural Movement**
+   - Spring physics create more natural motion
+   - Proper easing functions enhance user experience
+   - Subtle animations are often more effective
+
+2. **Performance vs. Quality**
+   - CSS transforms are crucial for performance
+   - Balance between visual quality and performance
+   - Importance of testing on different devices
+
+## Technical Insights
+
+### React and Framer Motion
+
+1. **Component Structure**
+   - Proper separation of concerns
+   - Reusable animation logic
+   - Clean prop interfaces
+
+2. **State Management**
+   - Efficient mouse position tracking
+   - Optimized re-render cycles
+   - Proper hook usage
+
+### CSS and Transforms
+
+1. **3D Space**
+   - Understanding perspective
+   - Managing transform origin
+   - Handling edge cases
+
+2. **Performance**
+   - Transform vs. layout properties
+   - GPU acceleration
+   - Animation frame rate
+
+## User Experience
+
+1. **Interaction Design**
+   - Clear hover states
+   - Responsive feedback
+   - Accessibility considerations
+
+2. **Mobile Experience**
+   - Touch device limitations
+   - Alternative interactions
+   - Performance on mobile
+
+## Best Practices
+
+1. **Code Organization**
+   - Modular components
+   - Reusable utilities
+   - Clear documentation
+
+2. **Performance**
+   - Proper optimization techniques
+   - Monitoring and metrics
+   - Testing across devices
+
+## Future Considerations
+
+1. **Technical Improvements**
+   - WebGL integration
+   - Custom shaders
+   - Advanced animations
+
+2. **Feature Enhancements**
+   - Interactive content
+   - Custom presets
+   - Theme system
+
+## TypeScript Configuration Insights
+
+1. **Path Aliases and Module Resolution**
+   - Understanding `tsconfig.json` path mappings
+   - Setting up `@/` prefix for src directory
+   - Configuring Contentlayer's generated types
+
+2. **Contentlayer Integration**
+   - Type safety for MDX content
+   - Autocomplete for content properties
+   - Generated type definitions
+
+3. **Type Safety Benefits**
+   - Runtime type checking
+   - IDE autocompletion
+   - Error prevention
+   - Better developer experience
+
+4. **Practical Examples**
+   ```typescript
+   // TypeScript knows all available properties
+   const log = allLogs[0];
+   log.title       // ✅ Autocomplete for string
+   log.date        // ✅ Autocomplete for date
+   log.description // ✅ Autocomplete for string
+   log.slug        // ✅ Autocomplete for computed field
+   ```
+
+5. **Behind the Scenes**
+   - Contentlayer's build process
+   - Generated type definitions
+   - TypeScript declaration files
+   - Path resolution in tsconfig.json
+
+6. **Contentlayer Configuration**
+   - `defineDocumentType()` method
+     - Defines content structure and type
+     - Specifies required frontmatter fields
+     - Sets up file path patterns for content discovery
+     - Configures URL/slug generation for NextJS routing
+   - `makeSource()` method
+     - Configures content source behavior
+     - Specifies root directory for content
+     - Defines document processing rules
+     - Sets up content transformations and validations
+   - Plugin System
+     - Extends Contentlayer's core functionality
+     - Provides additional processing capabilities
+     - Enables custom content transformations
+     - Supports advanced content management features
+   - Next.js Integration
+     - `next.config.ts` wraps Next.js with Contentlayer
+     - Enables MDX content processing in Next.js
+     - Ensures type generation and content sync
+     - Makes content available throughout the application
+   - MDX Content Components
+     - `MDXContent` component converts MDX to React
+     - Uses `useMDXComponent` hook for processing
+     - `components` prop maps HTML elements to custom components
+     - Enables consistent styling across MDX content
+     - Example: `<h1>` in MDX renders as custom styled component
+     - Acts as a bridge between MDX content and React app
+     - Transforms raw MDX into styled React components
+     - Handles the conversion from markdown to interactive UI
+
+## Resources
+
+- [Framer Motion Documentation](https://www.framer.com/motion/)
+- [CSS Transform Guide](https://developer.mozilla.org/en-US/docs/Web/CSS/transform)
+- [React Performance Optimization](https://reactjs.org/docs/optimizing-performance.html)

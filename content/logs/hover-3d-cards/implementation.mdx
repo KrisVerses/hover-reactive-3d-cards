@@ -1,0 +1,93 @@
+---
+title: "Implementation: 3D Card Hover Effects"
+date: "2024-03-20"
+description: "Technical implementation of the 3D card hover effects using Framer Motion and CSS transforms, including performance optimizations and responsive design considerations."
+---
+
+# Implementation Details
+
+## Core Components
+
+### Card Component
+
+The card component uses a combination of CSS transforms and Framer Motion for smooth 3D effects:
+
+```tsx
+const Card = ({ title, description, imageUrl }: CardProps) => {
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+
+  return (
+    <motion.div
+      className="relative w-full h-[400px] rounded-xl overflow-hidden"
+      onMouseMove={handleMouseMove}
+      style={{
+        perspective: "1000px",
+        transformStyle: "preserve-3d",
+      }}
+      whileHover={{
+        scale: 1.05,
+        transition: {
+          type: "spring",
+          stiffness: 300,
+          damping: 20,
+        },
+      }}
+    >
+      {/* Card content */}
+    </motion.div>
+  );
+};
+```
+
+### Animation System
+
+1. **Hover Detection**
+   - Tracks mouse position relative to card
+   - Calculates rotation angles based on mouse position
+   - Smooth transitions using spring physics
+
+2. **3D Transformations**
+   - Uses CSS perspective for 3D space
+   - Applies rotateX and rotateY based on mouse position
+   - Maintains smooth performance with transform properties
+
+3. **Performance Optimizations**
+   - Used `will-change` for better performance
+   - Implemented proper React hooks usage
+   - Optimized re-render cycles
+
+## Responsive Design
+
+1. **Grid Layout**
+   - Responsive grid using TailwindCSS
+   - Dynamic card sizing based on viewport
+   - Smooth reflow animations
+
+2. **Mobile Considerations**
+   - Disabled 3D effects on touch devices
+   - Simplified hover states for mobile
+   - Maintained readability across devices
+
+## Technical Challenges
+
+1. **3D Effect Balance**
+   - Finding the right perspective value
+   - Balancing rotation intensity
+   - Handling edge cases
+
+2. **Performance**
+   - Managing animation frame rate
+   - Optimizing transform calculations
+   - Reducing layout thrashing
+
+## Solutions
+
+1. **Smooth Animations**
+   - Used spring physics for natural motion
+   - Implemented proper easing functions
+   - Added transition delays for better UX
+
+2. **Performance**
+   - Used CSS transforms instead of layout properties
+   - Implemented proper React hooks
+   - Added performance monitoring

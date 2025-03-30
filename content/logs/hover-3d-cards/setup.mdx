@@ -1,0 +1,340 @@
+---
+title: "Setting Up MDX with Contentlayer in Next.js"
+date: "2024-03-30"
+description: "A comprehensive guide to setting up MDX content management with Contentlayer in a Next.js 14 project, including configuration, component structure, and troubleshooting."
+---
+
+# Setting Up MDX with Contentlayer in Next.js
+
+This guide provides a step-by-step process for setting up Contentlayer with MDX in a Next.js 14 project. Following these steps will help you avoid common pitfalls and configuration issues.
+
+## Installation
+
+1. Install necessary dependencies:
+
+```bash
+npm install contentlayer next-contentlayer date-fns rehype-slug rehype-highlight rehype-autolink-headings
+```
+
+2. Update `next.config.js` to use Contentlayer:
+
+```javascript
+import { withContentlayer } from "next-contentlayer";
+
+const nextConfig = {
+  reactStrictMode: true,
+};
+
+export default withContentlayer(nextConfig);
+```
+
+## Configuration
+
+3. Create `contentlayer.config.ts` in the root directory:
+
+```typescript
+import { defineDocumentType, makeSource } from "contentlayer/source-files";
+import rehypeAutolinkHeadings from "rehype-autolink-headings";
+import rehypeHighlight from "rehype-highlight";
+import rehypeSlug from "rehype-slug";
+
+const Log = defineDocumentType(() => ({
+  name: "Log",
+  filePathPattern: "hover-3d-cards/**/*.mdx", // Adjust pattern to match your file structure
+  contentType: "mdx", // Important! Specifies MDX content type
+  fields: {
+    title: { type: "string", required: true },
+    date: { type: "date", required: true },
+    description: { type: "string", required: true },
+  },
+  computedFields: {
+    slug: { 
+      type: "string", 
+      resolve: (doc) => doc._raw.flattenedPath.replace('hover-3d-cards/', '') 
+    },
+    url: { 
+      type: "string", 
+      resolve: (doc) => `logs/${doc._raw.flattenedPath.replace('hover-3d-cards/', '')}` 
+    }
+  }
+}));
+
+export default makeSource({
+  contentDirPath: "logs", // Path to content directory (relative to project root)
+  documentTypes: [Log],
+  mdx: {
+    rehypePlugins: [
+      rehypeSlug,
+      rehypeHighlight,
+      [rehypeAutolinkHeadings, { behavior: "append" }],
+    ],
+  },
+});
+```
+
+4. Update `tsconfig.json` to include Contentlayer paths:
+
+```json
+{
+  "compilerOptions": {
+    // ... other options
+    "paths": {
+      "@/*": ["./src/*"],
+      "contentlayer/generated": ["./.contentlayer/generated"]
+    }
+  },
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    ".contentlayer/generated"
+  ]
+}
+```
+
+## Creating MDX Components
+
+5. Create MDX components directory:
+
+```bash
+mkdir -p src/components/mdx
+```
+
+6. Create `MDXComponents.tsx` for styling MDX elements:
+
+```tsx
+import type { ReactNode } from 'react'
+
+interface CustomMDXComponents {
+  h1: (props: { children: ReactNode }) => React.ReactElement;
+  h2: (props: { children: ReactNode }) => React.ReactElement;
+  p: (props: { children: ReactNode }) => React.ReactElement;
+  [key: string]: any;
+}
+
+export const mdxComponents: CustomMDXComponents = {
+  h1: (props) => <h1 className="text-4xl font-bold mb-4" {...props} />,
+  h2: (props) => <h2 className="text-3xl font-bold mb-3" {...props} />,
+  p: (props) => <p className="mb-4" {...props} />,
+  // Add more components as needed
+}
+```
+
+7. Create `MDXContent.tsx` for rendering MDX content:
+
+```tsx
+'use client'
+
+import { useMDXComponent } from 'next-contentlayer/hooks'
+import { mdxComponents } from './MDXComponents'
+
+interface MDXContentProps {
+  code: string;
+}
+
+export function MDXContent({ code }: MDXContentProps) {
+  if (!code) return null;
+  
+  try {
+    const Component = useMDXComponent(code)
+    return <Component components={mdxComponents} />
+  } catch (error) {
+    console.error('Error rendering MDX:', error)
+    return <div>Error rendering content</div>
+  }
+}
+```
+
+## Setting Up Dynamic Routes
+
+8. Create the logs directory structure:
+
+```bash
+mkdir -p src/app/logs/[slug]
+```
+
+9. Create a logs layout file at `src/app/logs/layout.tsx`:
+
+```tsx
+import Link from "next/link";
+import { ArrowLeftIcon } from "@heroicons/react/24/outline";
+
+const LogLayout = ({ children }: { children: React.ReactNode }) => {
+  return (
+    <div>
+      <header className="p-4">
+        <Link href="/logs" className="flex items-center text-blue-500 hover:text-blue-700">
+          <ArrowLeftIcon className="w-4 h-4 mr-2" />
+          Back to Logs
+        </Link>
+      </header>
+      {children}
+    </div>
+  )
+}
+
+export default LogLayout;
+```
+
+10. Create a logs index page at `src/app/logs/page.tsx`:
+
+```tsx
+import Link from "next/link";
+import { allLogs } from "@contentlayer/generated";
+import { parseISO, format } from "date-fns";
+
+// Move sort function outside component to prevent recreation on each render
+const sortLogs = (logs: typeof allLogs) => {
+  return logs.sort((a, b) => parseISO(b.date).getTime() - parseISO(a.date).getTime());
+};
+
+const LogsPage = () => {
+  const logs = sortLogs(allLogs);
+
+  return (
+    <div className="container mx-auto px-4 py-8 max-w-4xl">
+      <h1 className="text-4xl font-bold mb-8 text-gray-900">Development Logs</h1>
+      
+      {logs.length === 0 ? (
+        <p className="text-gray-500 text-center">No logs found.</p>
+      ) : (
+        <div className="space-y-6">
+          {logs.map((log) => (
+            <Link 
+              key={log.slug} 
+              href={log.url} 
+              className="block group"
+            >
+              <div className="p-6 border border-gray-200 rounded-lg hover:border-blue-500 hover:shadow-lg transition-all duration-300 bg-white">
+                <div className="flex items-center justify-between mb-2">
+                  <h2 className="text-2xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
+                    {log.title}
+                  </h2>
+                  <time className="text-sm text-gray-500">
+                    {format(parseISO(log.date), "MMM d, yyyy")}
+                  </time>
+                </div>
+                <p className="text-gray-600 leading-relaxed">
+                  {log.description}
+                </p>
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default LogsPage;
+```
+
+11. Create a dynamic page for individual logs at `src/app/logs/[slug]/page.tsx`:
+
+```tsx
+import { notFound } from 'next/navigation'
+import { allLogs } from '@contentlayer/generated'
+import { format, parseISO } from 'date-fns'
+import { MDXContent } from '@/components/mdx/MDXContent'
+
+interface PageProps {
+  params: {
+    slug: string
+  }
+}
+
+export default async function LogPage({ params }: PageProps) {
+  const slug = params.slug
+  const log = allLogs.find((log) => log.slug === slug)
+
+  if (!log) {
+    notFound()
+  }
+
+  return (
+    <article className="prose prose-lg max-w-4xl mx-auto py-8 px-4">
+      <h1>{log.title}</h1>
+      <div className="mb-8 text-gray-500">
+        <time dateTime={log.date}>
+          {format(parseISO(log.date), 'MMMM d, yyyy')}
+        </time>
+      </div>
+      <MDXContent code={log.body.code} />
+    </article>
+  )
+}
+```
+
+## Post-Installation Steps
+
+12. Add a postinstall script to package.json:
+
+```json
+"scripts": {
+  "dev": "next dev",
+  "build": "next build",
+  "start": "next start",
+  "lint": "next lint",
+  "postinstall": "contentlayer build"
+}
+```
+
+13. Create an MDX file in your content directory:
+
+```markdown
+---
+title: "My First Log Entry"
+date: "2024-03-30"
+description: "This is my first log entry using Contentlayer and MDX"
+---
+
+# Hello MDX
+
+This is a test MDX file.
+```
+
+## Common Issues and Solutions
+
+### Type Errors with MDX Components
+
+If you encounter type errors with MDX components, ensure your MDXComponents interface has an index signature:
+
+```typescript
+interface CustomMDXComponents {
+  // Component types
+  [key: string]: any; // Important for compatibility with MDX
+}
+```
+
+### Page Component Errors
+
+For Next.js 14 with async server components, ensure:
+1. Use `async` keyword for page components that handle params
+2. Access params directly rather than using React.use()
+3. Handle potential errors properly
+
+### MDX Rendering Errors
+
+If you see "Invalid or unexpected token" errors:
+1. Make sure the `contentType: "mdx"` is set in contentlayer.config.ts
+2. Use client components for MDX rendering
+3. Add error handling in the MDX component
+4. Check that you're using the correct property (code) from the log body
+
+### Content Not Found
+
+If your content isn't being found:
+1. Verify your filePathPattern matches your actual directory structure
+2. Check that contentDirPath points to the right location
+3. Make sure slug computation is correct
+
+## Build and Run
+
+After completing the setup:
+
+1. Delete the `.contentlayer` directory if it exists
+2. Run `npm run dev`
+3. Navigate to `/logs` to see your log entries
+
+This completes the setup for Contentlayer with MDX in Next.js 14.
